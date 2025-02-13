@@ -1,34 +1,39 @@
-name: Deploy Web Page to Azure VM
+name: Deploy to Azure VM
 
 on:
   push:
     branches:
-      - main
+      - main  # Production
+      - dev   # Staging
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up SSH Key for Azure VM
+      - name: Set up SSH Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_SSH_PRIVATE_KEY || secrets.STAGING_SSH_PRIVATE_KEY }}
 
-      - name: Debug SSH Key (Optional)
-        run: echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}"  # Check if the secret is loaded
-
-      - name: Copy Web Files to Azure VM
+      - name: Copy Files to Azure VM
         run: |
-          scp -o StrictHostKeyChecking=no -r * linux@${{ secrets.AZURE_VM_IP }}:/var/www/html/
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            scp -o StrictHostKeyChecking=no -r production/* user@${{ secrets.PRODUCTION_VM_IP }}:/var/www/html/
+          else
+            scp -o StrictHostKeyChecking=no -r staging/* user@${{ secrets.STAGING_VM_IP }}:/var/www/html/
+          fi
 
-      - name: Restart Apache Service on Azure VM
+      - name: Restart Apache Service
         run: |
-          ssh -o StrictHostKeyChecking=no linux@${{ secrets.AZURE_VM_IP }} "sudo systemctl restart apache2"
-    
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ssh -o StrictHostKeyChecking=no user@${{ secrets.PRODUCTION_VM_IP }} "sudo systemctl restart apache2"
+          else
+            ssh -o StrictHostKeyChecking=no user@${{ secrets.STAGING_VM_IP }} "sudo systemctl restart apache2"
+          fi
 
 
 
