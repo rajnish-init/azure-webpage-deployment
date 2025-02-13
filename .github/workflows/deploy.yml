@@ -25,3 +25,10 @@ jobs:
     - name: Restart Apache Service on Azure VM
       run: |
         ssh linux@${{ secrets.AZURE_VM_IP }} "sudo systemctl restart apache2"
+    - name: Check if SSH key is loaded
+      run: echo "${{ secrets.AZURE__SSH__PRIVATE__KEY }}"  # This should print the secret value to check if it's loaded
+    
+
+
+
+
