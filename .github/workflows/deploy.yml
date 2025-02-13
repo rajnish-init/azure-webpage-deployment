@@ -10,23 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Set up SSH Key for Azure VM
-      uses: webfactory/ssh-agent@v0.5.3
-      with:
-        ssh-private-key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
+      - name: Set up SSH Key for Azure VM
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
 
-    - name: Copy Web Files to Azure VM
-      run: |
-        scp -r * linux@${{ secrets.AZURE_VM_IP }}:/var/www/html/
+      - name: Debug SSH Key (Optional)
+        run: echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}"  # Check if the secret is loaded
 
-    - name: Restart Apache Service on Azure VM
-      run: |
-        ssh linux@${{ secrets.AZURE_VM_IP }} "sudo systemctl restart apache2"
-    - name: Check if SSH key is loaded
-      run: echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}"  # This should print the secret value to check if it's loaded
+      - name: Copy Web Files to Azure VM
+        run: |
+          scp -o StrictHostKeyChecking=no -r * linux@${{ secrets.AZURE_VM_IP }}:/var/www/html/
+
+      - name: Restart Apache Service on Azure VM
+        run: |
+          ssh -o StrictHostKeyChecking=no linux@${{ secrets.AZURE_VM_IP }} "sudo systemctl restart apache2"
     
 
 
