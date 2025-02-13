@@ -17,23 +17,19 @@ jobs:
       - name: Set up SSH Key
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_SSH_PRIVATE_KEY || secrets.STAGING_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
 
       - name: Copy Files to Azure VM
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            scp -o StrictHostKeyChecking=no -r production/* user@${{ secrets.PRODUCTION_VM_IP }}:/var/www/html/
+            scp -o StrictHostKeyChecking=no -r production/* linux@${{ secrets.AZURE_VM_IP }}:/var/www/html/
           else
-            scp -o StrictHostKeyChecking=no -r staging/* user@${{ secrets.STAGING_VM_IP }}:/var/www/html/
+            scp -o StrictHostKeyChecking=no -r staging/* linux@${{ secrets.AZURE_VM_IP }}:/var/www/html/
           fi
 
       - name: Restart Apache Service
         run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            ssh -o StrictHostKeyChecking=no user@${{ secrets.PRODUCTION_VM_IP }} "sudo systemctl restart apache2"
-          else
-            ssh -o StrictHostKeyChecking=no user@${{ secrets.STAGING_VM_IP }} "sudo systemctl restart apache2"
-          fi
+          ssh -o StrictHostKeyChecking=no linux@${{ secrets.AZURE_VM_IP }} "sudo systemctl restart apache2"
 
 
 
